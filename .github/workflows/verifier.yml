@@ -1,0 +1,15 @@
+# Rejoue a chaque push la revue qui a trouve 14 defauts a la main :
+# liens, parite FR/EN, chiffres porteurs, syntaxe, secrets.
+name: verifier-produit
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verifier:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verification du produit
+        run: ./scripts/verifier-produit.sh

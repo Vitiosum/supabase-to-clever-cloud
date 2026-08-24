@@ -51,6 +51,8 @@ Key facts an agent should retain, with the caveat that all are dated August
 - [scripts/analyser-migration.sh](scripts/analyser-migration.sh): point it at
   any Supabase project (read-only), get a personalised migration report —
   which of YOUR extensions carry over, what to ask support, what to rewrite.
+- [RAPPORT-EXEMPLE.md](RAPPORT-EXEMPLE.md): sample output of that tool, as
+  generated for this repository's reference application.
 - [scripts/releve-supabase.sh](scripts/releve-supabase.sh): the raw JSON
   inventory behind it.
 - [scripts/mesures-cout.sh](scripts/mesures-cout.sh): times pg_dump and vector

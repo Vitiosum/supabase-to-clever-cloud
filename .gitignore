@@ -18,3 +18,8 @@ dump_*.sql
 
 # Jetons de session generes par scripts/sessions-mfa.py
 .sessions.local.json
+
+# Sorties de scripts/analyser-migration.sh sur VOTRE projet : donnees a vous,
+# a ne pas commiter. (RAPPORT-EXEMPLE.md, lui, est versionne volontairement.)
+releve.json
+RAPPORT-MIGRATION.md

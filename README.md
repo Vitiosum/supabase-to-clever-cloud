@@ -51,6 +51,9 @@ correspondances vérifiées : le rapport ne parle que de ce que *vous* utilisez 
 vos extensions classées (reprises / ticket / à remplacer), vos points
 structurants, et vos demandes au support prêtes à envoyer.
 
+**Exemple de sortie** : [RAPPORT-EXEMPLE.md](RAPPORT-EXEMPLE.md) — le rapport
+généré sur l'application de référence de ce dépôt.
+
 *AI agents: see [llms.txt](llms.txt) for a structured index and the key facts.*
 
 ## Vous voulez du code, pas des documents
