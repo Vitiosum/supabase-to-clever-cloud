@@ -259,8 +259,12 @@ Prouvé par exécution sur la vraie plateforme :
 - **trouvaille : `nullif` obligatoire dans les policies** — après un rollback
   sur une connexion de pool, le GUC retombe à `''` (pas NULL) et `''::uuid`
   casse la policy en `22P02`. Propagé dans tout le produit ;
-- **trouvaille monorepo : `clevercloud/` n'est pas lu depuis `APP_FOLDER`**
-  (`No cron to setup`) — à placer à la racine du dépôt ;
+- **le remplacement de `pg_cron` est prouvé en ligne** : cron toutes les
+  15 min, `HTTP 200` tracé dans `clever logs` (2026-08-24 09:45). Trois
+  exécutions réelles ont donné trois pièges, tous documentés : `clevercloud/`
+  non lu depuis `APP_FOLDER` (racine du dépôt obligatoire), crontab sans les
+  variables d'application (mort en 5 ms), et le remède — shebang
+  `#!/bin/bash -l`, jamais préfixé par `/bin/bash` dans `cron.json` ;
 - variables injectées conformes à la doc (`POSTGRESQL_ADDON_URI`,
   les trois `CELLAR_ADDON_*`), route de tâches en 401 sans jeton.
 
