@@ -56,6 +56,12 @@ généré sur l'application de référence de ce dépôt.
 
 *AI agents: see [llms.txt](llms.txt) for a structured index and the key facts.*
 
+## Vous présentez à un client
+
+**[DEMO.md](DEMO.md)** — le déroulé de 15 minutes : les vérifications d'avant
+réunion, les quatre actes avec leurs commandes exactes, et les réponses
+tenables aux trois questions qui reviennent. Jouable par n'importe qui.
+
 ## Vous voulez du code, pas des documents
 
 **[exemple-cible/](exemple-cible/)** — le squelette du backend qui remplace

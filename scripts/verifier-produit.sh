@@ -20,7 +20,7 @@ ko() { echo "ECHEC  $*"; ECHECS=$((ECHECS + 1)); }
 ok() { echo "ok     $*"; }
 
 # --- 1. Liens relatifs des documents publics --------------------------------
-DOCS_PUBLICS=(README.md MIGRER-DEPUIS-SUPABASE.md MIGRATING-FROM-SUPABASE.md
+DOCS_PUBLICS=(README.md DEMO.md MIGRER-DEPUIS-SUPABASE.md MIGRATING-FROM-SUPABASE.md
               ATTERRIR-SUR-CLEVER-CLOUD.md LANDING-ON-CLEVER-CLOUD.md
               MIGRER-DEPUIS-SUPABASE-HDS.md llms.txt exemple-cible/README.md)
 
