@@ -13,6 +13,18 @@
 # ---------------------------------------------------------------------------
 set -euo pipefail
 
+# CONSTATE A L'EXECUTION : le contexte cron ne porte PAS les variables
+# d'environnement de l'application. Premiere tentative : CMDEND 5 ms apres
+# CMD — le script mourait sur API_SERVICE_TOKEN non defini avant son premier
+# echo. On source donc l'environnement injecte par la plateforme.
+for ENVF in /home/bas/.env "$HOME/.env"; do
+  if [[ -f "$ENVF" ]]; then
+    set -a; . "$ENVF"; set +a
+    break
+  fi
+done
+echo "$(date -u +%FT%TZ) tache.sh demarre (env: ${ENVF:-aucun fichier trouve})"
+
 if [[ "${INSTANCE_NUMBER:-0}" != "0" ]]; then
   echo "instance ${INSTANCE_NUMBER} : tache ignoree (deduplication)"
   exit 0
