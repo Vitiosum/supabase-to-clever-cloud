@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash -l
 # ---------------------------------------------------------------------------
 # Tâche planifiée — remplace un job pg_cron qui appelait pg_net.
 #
@@ -20,6 +20,11 @@
 # posée après le démarrage), et les chemins doivent être absolus — d'où $ROOT.
 # ---------------------------------------------------------------------------
 set -euo pipefail
+
+# Le shebang #!/bin/bash -l est OBLIGATOIRE : le crontab n'a pas les variables
+# d'environnement de l'application, c'est le login shell qui les charge. Et ne
+# jamais prefixer l'appel par /bin/bash dans cron.json (ca annule le -l).
+# Verifie en execution reelle : sans -l, mort en 5 ms sur variable non definie.
 
 # Une seule instance exécute les tâches planifiées.
 if [[ "${INSTANCE_NUMBER:-0}" != "0" ]]; then

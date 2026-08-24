@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash -l
 # ---------------------------------------------------------------------------
 # Tache planifiee de la cible deployee (app supabase-demo-cible).
 #
@@ -13,17 +13,16 @@
 # ---------------------------------------------------------------------------
 set -euo pipefail
 
-# CONSTATE A L'EXECUTION : le contexte cron ne porte PAS les variables
-# d'environnement de l'application. Premiere tentative : CMDEND 5 ms apres
-# CMD — le script mourait sur API_SERVICE_TOKEN non defini avant son premier
-# echo. On source donc l'environnement injecte par la plateforme.
-for ENVF in /home/bas/.env "$HOME/.env"; do
-  if [[ -f "$ENVF" ]]; then
-    set -a; . "$ENVF"; set +a
-    break
-  fi
-done
-echo "$(date -u +%FT%TZ) tache.sh demarre (env: ${ENVF:-aucun fichier trouve})"
+# LE SHEBANG #!/bin/bash -l N'EST PAS DECORATIF. Le crontab n'a pas acces aux
+# variables d'environnement de l'application ; c'est le login shell (-l) qui
+# les charge. Piege documente : ne JAMAIS prefixer l'appel par /bin/bash dans
+# cron.json, ca superseder le shebang et annule le -l.
+#
+# Constate en trois executions reelles : (1) le clevercloud/ d'un sous-dossier
+# APP_FOLDER n'est pas lu — d'ou ce dossier a la racine ; (2) sans -l, le
+# script meurt en 5 ms sur API_SERVICE_TOKEN non defini ; (3) /home/bas/.env
+# existe mais ne contient pas les variables de l'application.
+echo "$(date -u +%FT%TZ) tache.sh demarre"
 
 if [[ "${INSTANCE_NUMBER:-0}" != "0" ]]; then
   echo "instance ${INSTANCE_NUMBER} : tache ignoree (deduplication)"

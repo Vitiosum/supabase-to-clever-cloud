@@ -166,10 +166,15 @@ much less so.
 Two further differences: `@reboot` does not exist, and paths must be absolute —
 hence `$ROOT`.
 
-**And a monorepo trap, observed while deploying**: with `APP_FOLDER`, the
-sub-folder's `clevercloud/cron.json` is **not picked up** — the deployment
-logs `No cron to setup`. Put `clevercloud/` at the **repository root**, even
-when the application lives in a sub-folder.
+**And two traps observed while deploying**:
+
+- with `APP_FOLDER`, the sub-folder's `clevercloud/cron.json` is **not picked
+  up** (`No cron to setup`). Put `clevercloud/` at the **repository root**;
+- **the crontab does not carry the application's environment variables.** The
+  script must use the `#!/bin/bash -l` shebang — the login shell is what loads
+  the environment — and must never be prefixed with `/bin/bash` in
+  `cron.json`, which would cancel the `-l`. Without it: dead in 5 ms on the
+  first undefined variable, with no application log line.
 
 ### Your `pg_net` calls in triggers
 
