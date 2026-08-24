@@ -240,7 +240,24 @@ supabase db dump -f dump_auth.sql --schema auth,storage
 
 Ces trois fichiers sont l'entrée de la phase 2.
 
-### Phase 2 — La cible (Clever Cloud) — **cible minimale vivante depuis le 24 août**
+### Phase 2 — La cible (Clever Cloud) — **reprise des données jouée et prouvée (24 août)**
+
+**Le dernier chantier est clos** : les 285 Mo de la source (20 001
+consultations, 55 policies) ont été migrés sur l'add-on DEV par
+`scripts/reprise-cible.sh` — **10 adaptations cataloguées et scriptées** — et
+la matrice d'identités de `scripts/recette-cible.sh` est **identique à la
+source, 36/36 cellules**, zéros du secrétariat compris. L'application vit
+maintenant sur les données migrées, policies de la source à l'œuvre.
+
+Les leçons majeures, toutes constatées puis documentées dans
+ATTERRIR/LANDING : restauration en **trois sections** obligatoire sans
+superuser ; les policies des **rôles de service se suppriment** (les convertir
+en `TO public` a publié un `USING(true)` — 501 patients visibles de tous) ;
+les **helpers de policies en lecture de claims exclusive** (le contrat du hook
+GoTrue), sinon PG planifie leur repli SQL et la RLS récurse ; les labels
+pgsodium **matérialisent des triggers** à purger ; et **pgvector est absent du
+cluster DEV PG 15** — le catalogue d'extensions dépend du plan, pas de la
+fiche produit.
 
 | | |
 |---|---|

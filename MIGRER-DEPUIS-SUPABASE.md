@@ -78,7 +78,7 @@ Vérifié contre la documentation de la plateforme cible, chaque ligne sourcée.
 |---|---|
 | PostgreSQL | add-on managé, versions 14 à 18 |
 | PostGIS | **fourni par défaut** |
-| **pgvector** | **fourni par défaut** — types vecteur, index `ivfflat` et `hnsw` |
+| **pgvector** | **fourni par défaut** sur les plans récents — types vecteur, index `ivfflat` et `hnsw`. **Vérifié absent du cluster partagé DEV (PG 15)** : contrôlez `pg_available_extensions` sur *votre* plan, pas la fiche produit |
 | `pgcrypto`, `uuid-ossp`, `pg_trgm`, `btree_gist`, `unaccent`, `hstore`, `citext` | fournis par défaut |
 | Buckets Storage | Cellar, compatible S3, URL pré-signées via les SDK standards |
 

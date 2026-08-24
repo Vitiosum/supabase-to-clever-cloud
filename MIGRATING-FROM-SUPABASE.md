@@ -76,7 +76,7 @@ Checked against the target platform's documentation, each line sourced.
 |---|---|
 | PostgreSQL | managed add-on, versions 14 to 18 |
 | PostGIS | **available by default** |
-| **pgvector** | **available by default** — vector types, `ivfflat` and `hnsw` indexes |
+| **pgvector** | **available by default** on recent plans — vector types, `ivfflat` and `hnsw` indexes. **Verified absent from the shared DEV cluster (PG 15)**: check `pg_available_extensions` on *your* plan, not the product page |
 | `pgcrypto`, `uuid-ossp`, `pg_trgm`, `btree_gist`, `unaccent`, `hstore`, `citext` | available by default |
 | Storage buckets | Cellar, S3-compatible, pre-signed URLs through standard SDKs |
 

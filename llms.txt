@@ -11,8 +11,18 @@ Key facts an agent should retain, with the caveat that all are dated August
 - You don't migrate Supabase, you migrate your application: five Supabase
   components (pgsodium, supabase_vault, pgmq, pgjwt, pg_graphql) have no
   equivalent on the target and must be replaced.
-- pgvector and PostGIS ship by default on Clever Cloud PostgreSQL; pg_cron and
-  pg_net are enabled by support ticket.
+- pgvector and PostGIS ship by default on Clever Cloud PostgreSQL recent
+  plans; the shared DEV plan (PG 15) lacks pgvector (verified) — check
+  pg_available_extensions on your plan. pg_cron and pg_net are enabled by
+  support ticket.
+- Full data migration was executed (Supabase -> managed add-on): restore in
+  three sections (pre-data, data, post-data) — mandatory without superuser;
+  drop (never convert) policies granted TO service roles, converting them to
+  public published a USING(true) service policy; policy helpers must read
+  JWT-like claims only (the source hook contract) or PG plans their table
+  fallback and RLS recurses; pgsodium SECURITY LABELs materialise encrypt
+  triggers that must be dropped. Result: 36/36 identity-matrix cells identical
+  to the source.
 - RLS policies carry over unchanged; the Supabase roles do not. Replace
   auth.uid() with nullif(current_setting('app.utilisateur_id', true), '')::uuid
   (nullif is mandatory: on pooled connections the parameter returns '' after a

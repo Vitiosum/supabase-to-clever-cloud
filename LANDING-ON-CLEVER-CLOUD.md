@@ -101,7 +101,9 @@ clever env import --alias my-app < .env.production
 ### Your PostgreSQL extensions
 
 47 extensions ship by default and are enabled with `CREATE EXTENSION` without
-asking anyone — including **PostGIS and pgvector**.
+asking anyone — including **PostGIS and pgvector**. A nuance verified while
+migrating: the catalogue depends on the **plan's cluster** — the shared DEV
+plan (PG 15) does not have pgvector. Check: `select * from pg_available_extensions;`.
 
 Ten more are available by support ticket, including **`pg_cron` and `pg_net`**.
 
