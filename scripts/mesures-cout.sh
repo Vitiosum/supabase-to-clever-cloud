@@ -95,6 +95,19 @@ for idx in json.loads(brut):
     nom, schema, ddl = idx["nom"], idx["schema"], idx["definition"]
     entree = {"index": f"{schema}.{nom}", "taille_octets": idx["taille_octets"]}
 
+    # Les suffixes _ccnew sont les restes d'un REINDEX CONCURRENTLY echoue
+    # (constate en production : un job pg_cron de reindexation qui echoue sur
+    # maintenance_work_mem en laisse un par echec). Les mesurer n'a pas de
+    # sens, et les recreer fabrique des index en TRIPLE — 158 Mo piece sur le
+    # cas de reference. On les signale pour nettoyage, rien d'autre.
+    if "_ccnew" in nom:
+        entree.update(A_NETTOYER=True,
+                      note="reste d'un REINDEX CONCURRENTLY echoue — "
+                           f"drop index {schema}.{nom}; puis corriger la cause "
+                           "(maintenance_work_mem du job)")
+        sortie.append(entree)
+        continue
+
     def sql(req, mwm=None):
         prefixe = f"set statement_timeout='30min'; "
         if mwm:

@@ -122,6 +122,15 @@ if inconnues:
 p("## 2. Les points qui décident de votre architecture")
 p("")
 
+restes = [i for i in (releve.get("index_vectoriels") or [])
+          if i.get("reste_reindex") or i.get("valide") is False]
+if restes:
+    noms = ", ".join("`" + r["nom"] + "`" for r in restes)
+    p(f"- **{len(restes)} index vectoriel(s) invalide(s) ou en double** ({noms}) : "
+      "restes d'un `REINDEX CONCURRENTLY` échoué — typiquement un job de "
+      "réindexation qui manque de `maintenance_work_mem`. À supprimer (`drop "
+      "index`) et à corriger AVANT de mesurer la bascule : chaque reste "
+      "double le stockage d'index et fausse les mesures.")
 tce = releve.get("chiffrement_transparent") or []
 if tce:
     p(f"- **Chiffrement transparent pgsodium : {len(tce)} `SECURITY LABEL`.** "

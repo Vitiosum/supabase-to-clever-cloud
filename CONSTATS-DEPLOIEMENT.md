@@ -116,6 +116,36 @@ de migration — mais il change le dimensionnement de la cible.
 
 ---
 
+## Une prédiction réalisée, neuf jours plus tard
+
+L'audit initial avait signalé, à l'état d'hypothèse : *« reindex index
+concurrently dans un job pg_cron : échec possible et index laissé INVALID »*.
+
+**C'est arrivé, deux fois.** Le job hebdomadaire `reindex-embeddings` a tourné
+les dimanches 16 et 23 août, et a échoué les deux fois sur exactement l'erreur
+prédite :
+
+```
+2026-08-23 04:00:00 failed : ERROR:  memory required is 65 MB, maintenance_work_mem is 32 MB
+2026-08-16 04:00:00 failed : ERROR:  memory required is 65 MB, maintenance_work_mem is 32 MB
+```
+
+Chaque échec a laissé un index `_ccnew` invalide. Personne ne l'aurait vu :
+le job suivant échoue pareil, les restes s'accumulent, et le jour où on les
+« répare » en les recréant, on triple le stockage d'index — 158 Mo pièce ici,
+vers un plafond de 500 Mo.
+
+L'outillage détecte désormais ce cas : le relevé expose `valide` et
+`reste_reindex` par index vectoriel, l'analyseur alerte, et `mesures-cout.sh`
+signale les restes pour nettoyage au lieu de les mesurer.
+
+À noter du même test de 9 jours d'autonomie : le projet est resté
+`ACTIVE_HEALTHY` (le trafic des crons suffit à éviter la pause du plan
+gratuit — 314 exécutions par 24 h, 0 échec hors reindex), et `net._http_response`
+se purge seul (78 lignes conservées). La base n'a pris que 2 Mo.
+
+---
+
 ## Trouvé en exécutant, pas en lisant
 
 L'analyse statique n'a rien vu de ce qui suit. Il a fallu invoquer les

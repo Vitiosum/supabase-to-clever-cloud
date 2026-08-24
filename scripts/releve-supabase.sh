@@ -84,10 +84,16 @@ cat <<JSON
              where schemaname not in ('pg_catalog') group by schemaname) s"),
 
   "index_vectoriels": $(j "
-    select jsonb_agg(jsonb_build_object('nom', indexname, 'table', schemaname||'.'||tablename,
-      'definition', indexdef,
-      'taille', pg_size_pretty(pg_relation_size((quote_ident(schemaname)||'.'||quote_ident(indexname))::regclass))))
-      from pg_indexes where indexdef ~* 'ivfflat|hnsw'"),
+    select jsonb_agg(jsonb_build_object('nom', i.indexname, 'table', i.schemaname||'.'||i.tablename,
+      'definition', i.indexdef,
+      'valide', x.indisvalid,
+      'reste_reindex', (i.indexname like '%\_ccnew%'),
+      'taille', pg_size_pretty(pg_relation_size((quote_ident(i.schemaname)||'.'||quote_ident(i.indexname))::regclass))))
+      from pg_indexes i
+      join pg_class c on c.relname = i.indexname
+        and c.relnamespace = i.schemaname::regnamespace
+      join pg_index x on x.indexrelid = c.oid
+      where i.indexdef ~* 'ivfflat|hnsw'"),
 
   "jobs_cron": $(j "
     select jsonb_agg(jsonb_build_object('nom', jobname, 'planification', schedule,
