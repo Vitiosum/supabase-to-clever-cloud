@@ -44,6 +44,34 @@ utile pour la démo, pas un défaut à corriger.
 | Données de démo | `psql "$SUPABASE_DB_URL" -f scripts/donnees-demo.sql` | fait |
 | Dumps | `pg_dump` natif | fait — 3 fichiers |
 
+#### Validation du 24 août 2026 — test grandeur nature après 9 jours
+
+Le parcours utilisateur complet a été rejoué sur le projet réel, sans
+intervention depuis le 15 août. Résultats :
+
+| Vérification | Résultat |
+|---|---|
+| Projet après 9 jours sans intervention | `ACTIVE_HEALTHY` — le trafic des crons évite la pause du plan gratuit (314 exéc./24 h) |
+| Rapport de l'analyseur vs version commitée | **identique** — l'outil est stable dans le temps |
+| `mesures-cout.sh` durci (1ʳᵉ exécution réelle) | codes publiés, reconstruction 52 s à 256 Mo, index restauré |
+| Sessions 9 jours après | rouvertes sans réenrôler le TOTP |
+| Recette | **code 1** avec exactement les 2 écarts connus (secrétariat) |
+| CI | verte à chaque push |
+
+**Une prédiction de l'audit s'est réalisée en production** : le job
+`reindex-embeddings` a échoué les dimanches 16 et 23 août sur
+`memory required is 65 MB, maintenance_work_mem is 32 MB`, laissant un index
+`_ccnew` invalide par échec (constat n°25, passé d'hypothèse à fait —
+historique `cron.job_run_details` à l'appui). L'outillage détecte désormais
+ces restes ; la base est nettoyée. Détail dans
+[CONSTATS-DEPLOIEMENT.md](CONSTATS-DEPLOIEMENT.md).
+
+**La procédure est considérée comme validée** pour sa partie exécutable.
+Restent trois conditions externes, hors de portée des scripts : la rotation
+des secrets exposés pendant la construction, les réponses écrites du support
+(connexions/plan, rôles, décodage logique, `fr-north-hds`), et les questions
+HDS ouvertes documentées dans le skill.
+
 #### La chaîne tourne réellement
 
 Vérifié, pas déduit. Un `update medical.rendez_vous set statut = 'confirme'`
