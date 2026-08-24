@@ -240,7 +240,31 @@ supabase db dump -f dump_auth.sql --schema auth,storage
 
 Ces trois fichiers sont l'entrée de la phase 2.
 
-### Phase 2 — La cible (Clever Cloud) — c'est le livrable
+### Phase 2 — La cible (Clever Cloud) — **cible minimale vivante depuis le 24 août**
+
+| | |
+|---|---|
+| Application | `app_791a9278` (`supabase-demo-cible`, node, zone `par`, org Vitio CC Demo) |
+| URL | <https://app-791a9278-5850-440f-94eb-7b0aaf1b7ae4.cleverapps.io> |
+| Add-ons liés | `supabase-demo-pg` (PostgreSQL), `supabase-demo-cellar` (Cellar) |
+| Code déployé | `exemple-cible/`, tel que publié, via `APP_FOLDER` |
+
+Prouvé par exécution sur la vraie plateforme :
+
+- **FORCE RLS bloque le propriétaire** : mon propre seed sans contexte a été
+  refusé (`new row violates row-level security policy`) — la contrainte
+  centrale du produit, vécue ;
+- **isolation par `current_setting`** : A ne voit que Yann, B ne voit qu'Anne,
+  l'anonyme voit `[]`, l'injection non-UUID voit `[]` ;
+- **trouvaille : `nullif` obligatoire dans les policies** — après un rollback
+  sur une connexion de pool, le GUC retombe à `''` (pas NULL) et `''::uuid`
+  casse la policy en `22P02`. Propagé dans tout le produit ;
+- **trouvaille monorepo : `clevercloud/` n'est pas lu depuis `APP_FOLDER`**
+  (`No cron to setup`) — à placer à la racine du dépôt ;
+- variables injectées conformes à la doc (`POSTGRESQL_ADDON_URI`,
+  les trois `CELLAR_ADDON_*`), route de tâches en 401 sans jeton.
+
+
 
 Reprendre la même application sur Clever Cloud, en écartant ce qui n'est pas
 portable et en assumant les arbitrages à voix haute. Ce qu'on ne migre pas doit

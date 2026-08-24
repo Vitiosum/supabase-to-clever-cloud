@@ -166,6 +166,11 @@ much less so.
 Two further differences: `@reboot` does not exist, and paths must be absolute —
 hence `$ROOT`.
 
+**And a monorepo trap, observed while deploying**: with `APP_FOLDER`, the
+sub-folder's `clevercloud/cron.json` is **not picked up** — the deployment
+logs `No cron to setup`. Put `clevercloud/` at the **repository root**, even
+when the application lives in a sub-folder.
+
 ### Your `pg_net` calls in triggers
 
 They become HTTP calls from your application. More verbose, and considerably

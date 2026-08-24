@@ -14,7 +14,9 @@ Key facts an agent should retain, with the caveat that all are dated August
 - pgvector and PostGIS ship by default on Clever Cloud PostgreSQL; pg_cron and
   pg_net are enabled by support ticket.
 - RLS policies carry over unchanged; the Supabase roles do not. Replace
-  auth.uid() with current_setting('app.utilisateur_id', true)::uuid and set
+  auth.uid() with nullif(current_setting('app.utilisateur_id', true), '')::uuid
+  (nullif is mandatory: on pooled connections the parameter returns '' after a
+  rollback, and ''::uuid errors out) and set
   the context per transaction (set_config with is_local=true). Mandatory
   companion step: ALTER TABLE ... FORCE ROW LEVEL SECURITY on every protected
   table — the add-on role owns the tables, and owners bypass RLS otherwise.

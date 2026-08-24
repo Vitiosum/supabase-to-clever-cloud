@@ -46,7 +46,11 @@ export const pool = new pg.Pool({
  * Vos policies Supabase se migrent en remplaçant
  *     auth.uid()
  * par
- *     current_setting('app.utilisateur_id', true)::uuid
+ *     nullif(current_setting('app.utilisateur_id', true), '')::uuid
+ *
+ * Le nullif est OBLIGATOIRE : sur une connexion de pool ayant deja touche le
+ * parametre puis rollback, current_setting renvoie '' (pas NULL), et ''::uuid
+ * leve 22P02 dans chaque policy. Constate sur l'add-on reel.
  *
  * Le `true` demande à PostgreSQL de renvoyer NULL si le paramètre n'est pas
  * défini, au lieu de lever une erreur : une requête sans contexte ne voit donc

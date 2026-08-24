@@ -37,11 +37,19 @@ Et les policies le lisent :
 
 ```sql
 create policy "son propre dossier" on patients
-  for select using (profil_id = current_setting('app.utilisateur_id', true)::uuid);
+  for select using (
+    profil_id = nullif(current_setting('app.utilisateur_id', true), '')::uuid
+  );
 ```
 
 `set local` est **borné à la transaction** : pas de fuite d'un contexte vers la
 requête suivante, même avec un pool de connexions réutilisées.
+
+**Le `nullif` n'est pas décoratif.** Constaté sur la plateforme réelle : sur
+une connexion de pool qui a déjà touché ce paramètre puis fait `rollback`,
+`current_setting(…, true)` renvoie la **chaîne vide**, pas NULL — et
+`''::uuid` fait planter la policy en `22P02`. Avec `nullif`, le cas retombe
+sur NULL : zéro ligne, zéro erreur.
 
 **Et le prérequis qu'on rate le plus souvent** : votre application se connecte
 avec le rôle de l'add-on, qui est **propriétaire des tables** (c'est lui qui
