@@ -6,6 +6,8 @@
 
 **Run it yourself.** The hosted demo was taken down after the presales review (November 2026). The steps in [Deploy on Clever Cloud](#deploy-on-clever-cloud) recreate the Clever Cloud target from scratch in about 10 minutes; filling it with the reference data needs the Supabase source (see [Run locally](#run-locally)) and `scripts/reprise-cible.sh`.
 
+**Get certified.** This demo runs on Clever Cloud. To deploy your own apps the same way, get certified at the [Clever Cloud Academy](https://academy.clever.cloud/).
+
 In one sentence: **you don't migrate Supabase, you migrate your application.** Five components have no equivalent anywhere else, and a standard managed database cannot host the Supabase stack. The simplest path is not to rebuild it, it is to replace it with an ordinary backend.
 
 ## What Clever Cloud does here
