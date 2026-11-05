@@ -306,7 +306,7 @@ relève.
 La colonne « source » est relevée sur le projet déployé. La colonne « cible »
 est désormais adossée à la documentation Clever Cloud, vérifiée en août 2026 —
 192 faits collectés, **116 confirmés après réfutation adverse**. Détail et
-sources : `~/.claude/skills/migration-supabase-clever/references/clever-cloud.md`.
+sources : `modules/supabase/reference/clever-cloud.md` du skill [`land-on-clever-cloud`](https://github.com/Vitiosum/land-on-clever-cloud).
 
 ### Le constat qui tranche avant tous les arbitrages
 
@@ -396,15 +396,15 @@ conteneurs.
 ### Outillage réutilisable
 
 La méthode générique, l'outillage et les gabarits de déploiement sont
-disponibles comme skill : `~/.claude/skills/migration-supabase-clever/`,
-invocable par `/migration-supabase-clever`. Le cas travaillé ici est dans
+dans le skill [`land-on-clever-cloud`](https://github.com/Vitiosum/land-on-clever-cloud), module Supabase
+(`modules/supabase/`). Le cas travaillé ici est dans
 [PROCEDURE-MIGRATION.md](PROCEDURE-MIGRATION.md).
 
 ## HDS — ce qui contraint l'architecture
 
 Le scénario de la démo est HDS. Points contre-expertisés (12 affirmations, un
 réfuteur chacune, sources primaires) — fiche complète dans
-`~/.claude/skills/migration-supabase-clever/references/hds.md`.
+`modules/supabase/reference/hds.md` du skill [`land-on-clever-cloud`](https://github.com/Vitiosum/land-on-clever-cloud).
 
 ### La zone se choisit à la création, et ne se rattrape pas
 

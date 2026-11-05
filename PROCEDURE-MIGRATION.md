@@ -1,7 +1,7 @@
 # Procédure de migration, appliquée à ce cas
 
 Ce document est le **cas travaillé** de la méthode générique, disponible comme
-skill réutilisable sous `~/.claude/skills/migration-supabase-clever/`.
+skill réutilisable [`land-on-clever-cloud`](https://github.com/Vitiosum/land-on-clever-cloud), module Supabase (`modules/supabase/`).
 
 Ici, la méthode n'est pas exposée dans l'abstrait : elle est déroulée sur
 Sillage Santé, avec les chiffres réellement mesurés. C'est ce qui se montre à
