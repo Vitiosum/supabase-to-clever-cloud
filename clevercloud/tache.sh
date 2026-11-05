@@ -9,7 +9,12 @@
 # racine du depot, meme si l'application vit dans exemple-cible/.
 #
 # La tache appelle la route protegee de l'application sur l'instance locale.
-# Deduplication obligatoire : les crons tournent sur CHAQUE instance.
+# Deduplication obligatoire : les crons tournent sur CHAQUE instance. Le filtre
+# INSTANCE_NUMBER ci-dessous ne suffit pas : pendant un deploiement, un scale
+# ou un `clever restart`, deux instances peuvent etre toutes deux numero 0
+# (verifie sur Clever Cloud le 2026-11-04). La garantie est en base : la route
+# reserve le creneau de 15 min (prendreCreneau, exemple-cible/db.js) et
+# l'appel perdant repond 200 « deja executee » sans rien faire.
 # ---------------------------------------------------------------------------
 set -euo pipefail
 
@@ -24,6 +29,7 @@ set -euo pipefail
 # existe mais ne contient pas les variables de l'application.
 echo "$(date -u +%FT%TZ) tache.sh demarre"
 
+# Premier filtre, pas une garantie (voir l'en-tete).
 if [[ "${INSTANCE_NUMBER:-0}" != "0" ]]; then
   echo "instance ${INSTANCE_NUMBER} : tache ignoree (deduplication)"
   exit 0

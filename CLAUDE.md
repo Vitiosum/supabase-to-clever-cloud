@@ -362,7 +362,7 @@ bascule du plan, et il est tranché : il faut réécrire, pas porter.
 | Upload reprenable TUS | segments de 6 Mio imposés | à valider derrière le load balancer | à tester |
 | Realtime | 3 tables publiées, `replica identity full`, policies sur `realtime.messages` | `supabase/realtime:v2.126.0` — **Postgres Changes hors d'atteinte sur l'add-on managé** (pas de `wal_level=logical`) | Broadcast et Presence, eux, ne dépendent pas du décodage logique : **vérifier lesquels sont réellement utilisés avant de renoncer** |
 | Edge Functions | 5 fonctions Deno, 3 secrets | Applications Clever Cloud (Docker/Node) | 1 app, ou 5 endpoints d'une app |
-| `pg_cron` | **5 jobs**, tous actifs | `clevercloud/cron.json` (disponible sur ticket si on veut le garder en base) | **sortir la logique de la base**. Piège : les crons s'exécutent sur **chaque scaler** — dédupliquer sur `INSTANCE_NUMBER` |
+| `pg_cron` | **5 jobs**, tous actifs | `clevercloud/cron.json` (disponible sur ticket si on veut le garder en base) | **sortir la logique de la base**. Piège : les crons s'exécutent sur **chaque scaler**, et `INSTANCE_NUMBER=0` ne suffit pas — créneau réservé en base (`taches.execution_cron`) |
 | `pg_net` | appel sortant en trigger ; réponses dans `net._http_response` | Appel HTTP applicatif (disponible sur ticket sinon) | même logique : sortir de la base |
 | `supabase_vault` | 3 secrets, dont `service_role_key` lu par les jobs cron | **indisponible** → variables d'environnement | natif, `clever env import` |
 | `pgmq` | 3 files, trigger d'empilement | **indisponible** → add-on Pulsar, ou table de file + `pg_cron` | tranché : Pulsar est natif |
@@ -378,9 +378,14 @@ bascule du plan, et il est tranché : il faut réécrire, pas porter.
   point) est un fichier de liaison local de la CLI, non lu par la plateforme.
 - **Les crons s'exécutent sur chaque scaler.** Avec trois instances, une tâche
   part trois fois. Le clustering n'est pas supporté : la déduplication est à la
-  charge de l'application, sur `INSTANCE_NUMBER`. C'est le piège n°1 quand on
-  remplace `pg_cron` par du cron Clever Cloud — en base, le job tournait une
-  fois.
+  charge de l'application. `INSTANCE_NUMBER=0` n'est qu'un premier filtre :
+  pendant un déploiement, un scale ou un `clever restart`, l'ancienne instance
+  et sa remplaçante peuvent être toutes deux numéro 0 (vérifié sur Clever
+  Cloud le 4 novembre 2026, démo demo-workers-cron). La tâche est donc
+  idempotente par créneau en base : `prendreCreneau` (`exemple-cible/db.js`)
+  insère `(tâche, créneau)` dans `taches.execution_cron`, seule l'instance qui
+  obtient la ligne exécute. C'est le piège n°1 quand on remplace `pg_cron` par
+  du cron Clever Cloud — en base, le job tournait une fois.
 
 Face à l'empilement de conteneurs (PostgREST + GoTrue + Realtime + imgproxy) :
 **Kubernetes Clever Cloud (CKE)** pour héberger la stack, avec les add-ons

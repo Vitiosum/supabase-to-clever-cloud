@@ -36,7 +36,7 @@
 - **`FORCE ROW LEVEL SECURITY` sur 2 table(s)** (`medical.consultations`, `medical.documents`). Vos scripts d'import doivent en tenir compte : ce qui passait avec `postgres` (BYPASSRLS chez Supabase) peut échouer ailleurs.
 - **Realtime : 3 table(s) publiée(s).** Si vous utilisez *Postgres Changes*, le décodage logique n'est pas ouvert par défaut sur un add-on managé (demande support, jamais sans accord écrit). *Broadcast*/*Presence* : un WebSocket applicatif suffit.
 - **1 Database Webhook(s)** (`rdv_confirme_webhook`) : surcouche propre à Supabase, à réécrire en appel HTTP applicatif.
-- **5 tâche(s) `pg_cron`** → `clevercloud/cron.json`. Piège : les crons tournent sur CHAQUE instance — dédupliquez sur `INSTANCE_NUMBER` (voir `exemple-cible/clevercloud/tache.sh`).
+- **5 tâche(s) `pg_cron`** → `clevercloud/cron.json`. Piège : les crons tournent sur CHAQUE instance, et `INSTANCE_NUMBER` ne suffit pas à dédupliquer — deux instances peuvent être numéro 0 pendant un déploiement, un scale ou un redémarrage (vérifié sur Clever Cloud le 4 novembre 2026). Rendez chaque tâche idempotente par créneau en base (voir `prendreCreneau` dans `exemple-cible/db.js`).
 - **3 secret(s) dans le Vault** → variables d'environnement (`clever env import`). Gain net : plus de secret déchiffré au fil des requêtes.
 - **4 bucket(s) Storage** → Cellar (S3). 4 imposent des types MIME : cette contrainte est portée par la base chez Supabase, Cellar ne filtre pas — à réimplémenter côté application. Et une clé Cellar donne accès à tous les buckets de l'add-on.
 

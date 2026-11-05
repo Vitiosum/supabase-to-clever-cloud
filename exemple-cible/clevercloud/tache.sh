@@ -16,6 +16,13 @@
 # migration, et la plus discrète : un rappel envoyé en triple se remarque, une
 # purge lancée en triple beaucoup moins.
 #
+# Le filtre INSTANCE_NUMBER ci-dessous écarte les autres instances, mais NE
+# SUFFIT PAS : pendant un déploiement, un scale ou un `clever restart`,
+# l'ancienne instance et sa remplaçante peuvent être toutes deux numéro 0
+# (vérifié sur Clever Cloud le 2026-11-04). La garantie est en base : la route
+# réserve le créneau de la tâche (prendreCreneau, db.js), et l'appel perdant
+# répond 200 « déjà exécutée » sans rien faire.
+#
 # Deux autres différences avec pg_cron : `@reboot` n'existe pas (la crontab est
 # posée après le démarrage), et les chemins doivent être absolus — d'où $ROOT.
 # ---------------------------------------------------------------------------
@@ -26,7 +33,7 @@ set -euo pipefail
 # jamais prefixer l'appel par /bin/bash dans cron.json (ca annule le -l).
 # Verifie en execution reelle : sans -l, mort en 5 ms sur variable non definie.
 
-# Une seule instance exécute les tâches planifiées.
+# Premier filtre, pas une garantie (voir l'en-tête) : seule l'instance 0 appelle.
 if [[ "${INSTANCE_NUMBER:-0}" != "0" ]]; then
   echo "instance ${INSTANCE_NUMBER} : tâche ignorée (déduplication)"
   exit 0

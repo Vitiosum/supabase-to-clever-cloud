@@ -17,7 +17,7 @@ In one sentence: **you don't migrate Supabase, you migrate your application.** F
 | PostgREST, GoTrue, Realtime | One **Node.js** app (`APP_FOLDER=exemple-cible`): explicit routes, the user identity set per transaction | `exemple-cible/serveur.js` |
 | RLS policies | **PostgreSQL add-on**, same policies: `auth.uid()` becomes `nullif(current_setting('app.utilisateur_id', true), '')::uuid`, plus `FORCE ROW LEVEL SECURITY` on every protected table, since the add-on role owns the tables and an owner bypasses RLS otherwise | `exemple-cible/db.js` |
 | Storage buckets | **Cellar**, pre-signed URLs with the AWS SDK; the app checks rights *before* signing, since Cellar has no per-row policy | `exemple-cible/stockage.js` |
-| `pg_cron` + `pg_net` | **Clever Cloud cron**: `clevercloud/cron.json` calls `clevercloud/tache.sh` every 15 minutes, which posts to `/taches/battement`; it runs on instance 0 only (`INSTANCE_NUMBER`), because crons run on every instance | `clevercloud/` at the repo root |
+| `pg_cron` + `pg_net` | **Clever Cloud cron**: `clevercloud/cron.json` calls `clevercloud/tache.sh` every 15 minutes, which posts to `/taches/battement`. Crons run on every instance, and filtering on instance 0 (`INSTANCE_NUMBER`) is not enough: during a deploy, a scale or a restart, two instances can both be number 0 (verified on Clever Cloud on 4 November 2026). The job is therefore idempotent per slot in the database: the first call to insert its 15-minute slot into `taches.execution_cron` runs it, the others answer "already done" | `clevercloud/` at the repo root, `exemple-cible/db.js` |
 | Vault secrets | Environment variables | `API_SERVICE_TOKEN` |
 | The data | `pg_dump` in three sections (pre-data, data, post-data, the only order that needs no superuser), with ten catalogued adaptations | `scripts/reprise-cible.sh` |
 | The proof | The resource × identity matrix, replayed on the add-on and compared with the source | `scripts/recette-cible.sh` |
@@ -103,7 +103,7 @@ read -rs CIBLE_URL && export CIBLE_URL     # paste the add-on's POSTGRESQL_ADDON
 | `APP_FOLDER` | you | `exemple-cible` |
 | `CC_HEALTH_CHECK_PATH` | you | `/sante`, which runs `select 1` on the add-on |
 | `DB_POOL_MAX` | optional | Pool size, default 5. Rule: pool × max instances ≤ the plan's max connections, a number not published per plan: ask support before raising `--max-instances` |
-| `INSTANCE_NUMBER` | Clever Cloud | The cron task runs on instance 0 only |
+| `INSTANCE_NUMBER` | Clever Cloud | First filter only: the cron task skips instances other than 0. Two instances can both be 0 during a deploy, scale or restart; the slot taken in the database is what guarantees a single run |
 | `PORT` | Clever Cloud | 8080 |
 
 Check the injected variable names in the Console (the app's environment variables) rather than guessing them.
@@ -116,7 +116,7 @@ Check the injected variable names in the Console (the app's environment variable
 | `GET /patients` | `GET /rest/v1/patients` | The rows the RLS policies let through for the identity in `x-utilisateur-id` (a UUID; anything else sets no context, so the policies return nothing) |
 | `POST /rendez-vous` | `POST /rest/v1/rendez_vous` | `{praticienId, patientId, debut, fin}` → 201 with the id; `creneau` is a `tstzrange` |
 | `GET /documents/:id/url` | `createSignedUrl()` | 60-second pre-signed Cellar URL (bucket `documents-medicaux`), 404 if the policy hides the row |
-| `POST /taches/:nom` | `pg_cron` + `pg_net` → Edge Function | Needs `Authorization: Bearer $API_SERVICE_TOKEN`, 401 otherwise |
+| `POST /taches/:nom` | `pg_cron` + `pg_net` → Edge Function | Needs `Authorization: Bearer $API_SERVICE_TOKEN`, 401 otherwise. Runs at most once per slot (the job's cron period): a second call in the same slot answers 200 `déjà exécutée` and does nothing |
 
 The skeleton trusts the `x-utilisateur-id` header: authentication is deliberately left out. Plug a JWT check, or a Keycloak add-on, in front of it before exposing it.
 
@@ -125,7 +125,7 @@ The skeleton trusts the `x-utilisateur-id` header: authentication is deliberatel
 ```
 exemple-cible/            the Clever Cloud target (Node.js, Express, pg, AWS SDK)
   serveur.js              routes, and what each one replaces
-  db.js                   RLS without the Supabase roles: set_config per transaction
+  db.js                   RLS without the Supabase roles: set_config per transaction; one cron run per slot
   stockage.js             Cellar client, with the bare-hostname trap
   clevercloud/            the cron as you would write it for your own app
 clevercloud/              the cron of the deployed target (repo root: APP_FOLDER hides sub-folders)

@@ -150,14 +150,37 @@ Un fichier `clevercloud/cron.json` à la racine du dépôt :
 
 **Le piège à connaître** : les crons s'exécutent sur **chaque instance**. Avec
 trois instances, la tâche part trois fois. Le clustering n'est pas supporté —
-la déduplication vous revient :
+la déduplication vous revient.
+
+Filtrer sur `INSTANCE_NUMBER` écarte les autres instances, mais **ne suffit
+pas** : pendant un déploiement, un scale ou un `clever restart`, l'ancienne
+instance et sa remplaçante peuvent être **toutes deux numéro 0** (vérifié sur
+Clever Cloud le 4 novembre 2026). Gardez ce filtre, et rendez la tâche
+idempotente par créneau, en base :
 
 ```bash
-# En tête de clevercloud/tache.sh
+# En tête de clevercloud/tache.sh : un premier filtre, pas une garantie
 if [[ "${INSTANCE_NUMBER:-0}" != "0" ]]; then
   exit 0
 fi
 ```
+
+```sql
+-- Dans la route appelée par le cron : une ligne par tâche et par créneau
+create schema if not exists taches;
+create table if not exists taches.execution_cron (
+  tache text, creneau timestamptz, primary key (tache, creneau));
+
+insert into taches.execution_cron  -- $2 = la période du cron, '15 minutes'
+values ($1, date_bin($2::interval, now() + $2::interval / 2, timestamptz '2000-01-01 00:00+00'))
+on conflict do nothing returning creneau;
+-- aucune ligne renvoyée : une autre instance a pris ce créneau, ne rien faire
+```
+
+Le créneau est calculé par la base : une seule horloge pour toutes les
+instances. Placez cette table hors des schémas où vous forcez la RLS : le rôle
+de l'add-on n'a pas `BYPASSRLS`, et sans policy l'insert serait refusé. Code
+complet dans `exemple-cible/db.js`.
 
 En base, le job tournait une fois. Ici, autant de fois qu'il y a d'instances.
 Un rappel envoyé en triple se voit ; une purge lancée en triple, beaucoup

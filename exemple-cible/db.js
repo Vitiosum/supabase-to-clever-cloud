@@ -87,3 +87,58 @@ export async function avecUtilisateur(utilisateurId, travail) {
 export async function anonyme(texte, valeurs) {
   return avecUtilisateur(null, (client) => client.query(texte, valeurs));
 }
+
+// --- Tâches planifiées : une exécution par créneau ----------------------------
+// Les crons Clever Cloud tournent sur CHAQUE instance, et le filtre
+// INSTANCE_NUMBER=0 de clevercloud/tache.sh ne suffit pas : pendant un
+// déploiement, un scale ou un `clever restart`, l'ancienne instance et sa
+// remplaçante peuvent être TOUTES DEUX numéro 0 (vérifié sur Clever Cloud le
+// 2026-11-04). La garantie est donc en base : une ligne par tâche et par
+// créneau, et seule l'instance qui l'insère exécute la tâche.
+//
+// Schéma à part, hors de medical : la phase E de reprise-cible.sh y force la
+// RLS sur chaque table, et sans policy l'insert serait refusé (le rôle de
+// l'add-on n'a pas BYPASSRLS). Ici, ce rôle crée la table, en est
+// propriétaire, et la RLS n'y est pas activée.
+//
+// Le verrou consultatif sérialise la création : deux `create ... if not
+// exists` concurrents peuvent échouer l'un sur l'autre, et deux instances
+// numéro 0 appellent justement en même temps. Plusieurs instructions sans
+// paramètre = une seule transaction implicite. Volume : une ligne par
+// créneau, ~400 par jour pour les trois tâches, à purger si besoin.
+const SCHEMA_TACHES = `
+  select pg_advisory_xact_lock(hashtext('taches.execution_cron'));
+  create schema if not exists taches;
+  create table if not exists taches.execution_cron (
+    tache   text        not null,
+    creneau timestamptz not null,
+    primary key (tache, creneau)
+  );`;
+let schemaTaches;
+
+/**
+ * Réserve le créneau courant de la tâche. Renvoie son horodatage si cette
+ * instance l'a obtenu, null si une autre instance l'a déjà pris.
+ *
+ * Le créneau est calculé par la base, une seule horloge pour toutes les
+ * instances : c'est la borne de période la plus proche de now(). Un cron du
+ * quart d'heure parti à 09:44:59,9 ou à 09:45:01 tombe ainsi sur le même
+ * créneau 09:45, malgré un léger décalage d'horloge ou un login shell lent.
+ */
+export async function prendreCreneau(tache, periode) {
+  schemaTaches ??= pool.query(SCHEMA_TACHES).catch((erreur) => {
+    schemaTaches = undefined; // réessayer au prochain appel
+    throw erreur;
+  });
+  await schemaTaches;
+
+  const { rows } = await pool.query(
+    `insert into taches.execution_cron (tache, creneau)
+     values ($1, date_bin($2::interval, now() + $2::interval / 2,
+                          timestamptz '2000-01-01 00:00+00'))
+     on conflict do nothing
+     returning creneau`,
+    [tache, periode],
+  );
+  return rows[0]?.creneau ?? null;
+}

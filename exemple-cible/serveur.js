@@ -11,7 +11,7 @@
 // ---------------------------------------------------------------------------
 import express from 'express';
 import { createHash, timingSafeEqual } from 'node:crypto';
-import { avecUtilisateur, pool } from './db.js';
+import { avecUtilisateur, pool, prendreCreneau } from './db.js';
 import { urlSignee } from './stockage.js';
 
 const app = express();
@@ -106,14 +106,34 @@ app.get('/documents/:id/url', async (req, res, suite) => {
 // Remplace :  pg_cron + pg_net appelant une Edge Function.
 // Appelé par clevercloud/tache.sh, protégé par un jeton : cette route ne doit
 // pas être publique.
+//
+// Période de chaque tâche, la même que dans cron.json : elle découpe le temps
+// en créneaux, et chaque créneau ne s'exécute qu'une fois, quel que soit le
+// nombre d'instances qui appellent (voir prendreCreneau dans db.js).
+const PERIODES = new Map([
+  ['battement', '15 minutes'], // clevercloud/cron.json (cible déployée)
+  ['rappel-rdv', '1 hour'], // exemple-cible/clevercloud/cron.json
+  ['traiter-files', '5 minutes'],
+]);
+
 app.post('/taches/:nom', async (req, res, suite) => {
   if (!jetonValide(req.get('authorization'))) {
     return res.status(401).json({ erreur: 'non autorisé' });
   }
+  const tache = req.params.nom;
+  const periode = PERIODES.get(tache);
+  if (!periode) return res.status(404).json({ erreur: 'tâche inconnue' });
   try {
+    const creneau = await prendreCreneau(tache, periode);
+    if (!creneau) {
+      // Une autre instance a déjà pris ce créneau. Ce n'est pas une erreur :
+      // le cron ne doit pas sortir en échec pour autant.
+      return res.json({ tache, etat: 'déjà exécutée sur ce créneau' });
+    }
     // La logique métier vit ici, testable hors production — contrairement à un
-    // trigger en base.
-    res.json({ tache: req.params.nom, traites: 0 });
+    // trigger en base. Si elle échoue, le créneau reste pris : la tâche repart
+    // au créneau suivant. Au plus une fois par créneau, jamais deux.
+    res.json({ tache, creneau, traites: 0 });
   } catch (e) {
     suite(e);
   }

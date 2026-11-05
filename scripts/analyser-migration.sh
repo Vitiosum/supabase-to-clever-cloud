@@ -157,8 +157,11 @@ if wh.get("triggers"):
 jobs = releve.get("jobs_cron") or []
 if jobs:
     p(f"- **{len(jobs)} tâche(s) `pg_cron`** → `clevercloud/cron.json`. "
-      "Piège : les crons tournent sur CHAQUE instance — dédupliquez sur "
-      "`INSTANCE_NUMBER` (voir `exemple-cible/clevercloud/tache.sh`).")
+      "Piège : les crons tournent sur CHAQUE instance, et `INSTANCE_NUMBER` "
+      "ne suffit pas à dédupliquer — deux instances peuvent être numéro 0 "
+      "pendant un déploiement, un scale ou un redémarrage (vérifié sur Clever "
+      "Cloud le 4 novembre 2026). Rendez chaque tâche idempotente par créneau "
+      "en base (voir `prendreCreneau` dans `exemple-cible/db.js`).")
 secrets = releve.get("secrets_vault") or []
 if secrets:
     p(f"- **{len(secrets)} secret(s) dans le Vault** → variables "

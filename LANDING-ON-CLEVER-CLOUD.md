@@ -152,14 +152,37 @@ A `clevercloud/cron.json` file at the repository root:
 
 **The trap to know about**: cron jobs run on **every instance**. With three
 instances, the task fires three times. Clustering is not supported —
-deduplication is on you:
+deduplication is on you.
+
+Filtering on `INSTANCE_NUMBER` skips the other instances, but **is not
+enough**: during a deploy, a scale or a `clever restart`, the old instance and
+its replacement can **both be number 0** (verified on Clever Cloud on
+4 November 2026). Keep that filter, and make the job idempotent per slot, in
+the database:
 
 ```bash
-# At the top of clevercloud/task.sh
+# At the top of clevercloud/task.sh: a first filter, not a guarantee
 if [[ "${INSTANCE_NUMBER:-0}" != "0" ]]; then
   exit 0
 fi
 ```
+
+```sql
+-- In the route the cron calls: one row per job and per slot
+create schema if not exists tasks;
+create table if not exists tasks.cron_run (
+  job text, slot timestamptz, primary key (job, slot));
+
+insert into tasks.cron_run  -- $2 = the cron period, '15 minutes'
+values ($1, date_bin($2::interval, now() + $2::interval / 2, timestamptz '2000-01-01 00:00+00'))
+on conflict do nothing returning slot;
+-- no row returned: another instance took this slot, do nothing
+```
+
+The slot is computed by the database: one clock for every instance. Keep this
+table out of the schemas where you force RLS: the add-on role has no
+`BYPASSRLS`, and without a policy the insert would be refused. Full code in
+`exemple-cible/db.js`.
 
 In the database, the job ran once. Here, it runs as many times as you have
 instances. A reminder sent three times is noticed; a purge run three times,

@@ -34,7 +34,11 @@ Key facts an agent should retain, with the caveat that all are dated August
   decoding are support requests on a managed add-on — reviewed case by case,
   neither guaranteed nor ruled out. Nothing is certain until confirmed in
   writing; treat any unanswered request as unavailable when planning.
-- Cron jobs run on every instance: deduplicate on INSTANCE_NUMBER.
+- Cron jobs run on every instance. Filtering on INSTANCE_NUMBER=0 is not
+  enough: during a deploy, scale or restart, two instances can both be number 0
+  (verified on Clever Cloud on 2026-11-04). Make each job idempotent per slot
+  in the database: insert (job, slot) ... on conflict do nothing, and run only
+  if a row came back (exemple-cible/db.js).
 - Static analysis of this codebase produced 73% false positives (93 claims,
   68 refuted); the decisive findings only surfaced by executing. Do not trust
   a migration plan that ran nothing.
